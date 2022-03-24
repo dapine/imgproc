@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	// conn, err := amqp.Dial("amqp://guest:guest@localhost:5672")
-	conn, err := amqp.Dial("amqp://guest:guest@host.docker.internal:5672")
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672")
+	// conn, err := amqp.Dial("amqp://guest:guest@host.docker.internal:5672")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -56,16 +56,19 @@ func main() {
 
 	go func() {
 		for d := range msgs {
-			// fmt.Println("New message: %s", string(d.Body))
-			content := d.Body
+            headers := d.Headers
+            payload := d.Body
 
-			img, err := bimg.NewImage(content).Resize(32, 32)
-			if err != nil {
-				fmt.Println(err)
-			
+            switch headers["type"] {
+            case "resize":
+                width := headers["width"].(int64)
+                height := headers["height"].(int64)
 
-			// fmt.Println(d)
-			// fmt.Println("New message")
+                Resize(payload, width, height)
+                break
+            default:
+                fmt.Println("%+v", d)
+            }
 		}
 	}()
 
