@@ -11,9 +11,9 @@ func herr(err error) {
     }
 }
 
-func Resize(bytes []byte, width int64, height int64) {
+func Resize(bytes []byte, width int64, height int64) []byte {
 	img, err := bimg.NewImage(bytes).Resize(int(width), int(height))
 	herr(err)
 
-	bimg.Write("out.jpeg", img)
+	return img
 }

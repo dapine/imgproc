@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/streadway/amqp"
 )
@@ -56,15 +57,30 @@ func main() {
 
 	go func() {
 		for d := range msgs {
+
             headers := d.Headers
             payload := d.Body
+
+	    contentType := headers["content_type"].(string)
 
             switch headers["type"] {
             case "resize":
                 width := headers["width"].(int64)
                 height := headers["height"].(int64)
 
-                Resize(payload, width, height)
+		img := Resize(payload, width, height)
+
+                ret := amqp.Publishing{
+		    CorrelationId: d.CorrelationId,
+                    Timestamp: time.Now(),
+                    ContentType: contentType,
+                    Body: img,
+                }
+
+                err := ch.Publish("", d.ReplyTo, false, false, ret)
+                if err != nil {
+                    fmt.Println(err)
+                }
                 break
             default:
                 fmt.Println("%+v", d)
