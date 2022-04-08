@@ -7,15 +7,13 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func processMessages(ch *amqp.Channel, msgs <-chan amqp.Delivery) {
+func processResizeMessages(ch *amqp.Channel, msgs <-chan amqp.Delivery) {
 	for d := range msgs {
 		headers := d.Headers
 		payload := d.Body
 
 		contentType := headers["content_type"].(string)
 
-		switch headers["type"] {
-		case "resize":
 		width := headers["width"].(int64)
 		height := headers["height"].(int64)
 
@@ -30,29 +28,25 @@ func processMessages(ch *amqp.Channel, msgs <-chan amqp.Delivery) {
 
 		err := ch.Publish("", d.ReplyTo, false, false, ret)
 		logErr(err)
-		break
-		default:
-		fmt.Println("%+v", d)
-		}
 	}
 }
 
-func main() {
-	queue, exchage, key := "hello", "hello_exchange", "teste"
+func consumeResizeQueue(ch *amqp.Channel) {
+	queue, exchage, key := "resize", "image_processing", "resize"
+	q := newQueue(ch, queue, exchage, key)
+	msgs := consume(ch, q)
+	go processResizeMessages(ch, msgs)
+}
 
+func main() {
 	conn := newConnection("amqp://guest:guest@localhost:5672")
 	defer conn.Close()
 	ch := newChannel(conn)
 	defer ch.Close()
 
-	q := newQueue(ch, queue, exchage, key)
-
-	msgs := consume(ch, q)
+	consumeResizeQueue(ch)
 
 	forever := make(chan bool)
-
-	go processMessages(ch, msgs)
-
 	fmt.Println("Server started")
 	<-forever
 }
