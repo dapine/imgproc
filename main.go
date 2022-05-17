@@ -31,11 +31,41 @@ func processResizeMessages(ch *amqp.Channel, msgs <-chan amqp.Delivery) {
 	}
 }
 
-func consumeResizeQueue(ch *amqp.Channel) {
-	queue, exchage, key := "resize", "image_processing", "resize"
-	q := newQueue(ch, queue, exchage, key)
-	msgs := consume(ch, q)
-	go processResizeMessages(ch, msgs)
+func processRotateMessages(ch *amqp.Channel, msgs <-chan amqp.Delivery) {
+	for d := range msgs {
+		headers := d.Headers
+		payload := d.Body
+
+		contentType := headers["content_type"].(string)
+
+		angle := headers["angle"].(int64)
+
+		img := Rotate(payload, angle)
+
+		ret := amqp.Publishing{
+		    CorrelationId: d.CorrelationId,
+		    Timestamp: time.Now(),
+		    ContentType: contentType,
+		    Body: img,
+		}
+
+		err := ch.Publish("", d.ReplyTo, false, false, ret)
+		logErr(err)
+	}
+}
+
+func consumeQueues(ch *amqp.Channel) {
+	queue, exchage, key := "rotate", "image_processing", "rotate"
+	qRotate := newQueue(ch, queue, exchage, key)
+
+	queue, exchage, key = "resize", "image_processing", "resize"
+	qResize := newQueue(ch, queue, exchage, key)
+
+	msgsRotate := consume(ch, qRotate)
+	msgsResize := consume(ch, qResize)
+
+	go processResizeMessages(ch, msgsResize)
+	go processRotateMessages(ch, msgsRotate)
 }
 
 func main() {
@@ -44,7 +74,7 @@ func main() {
 	ch := newChannel(conn)
 	defer ch.Close()
 
-	consumeResizeQueue(ch)
+	consumeQueues(ch)
 
 	forever := make(chan bool)
 	fmt.Println("Server started")
