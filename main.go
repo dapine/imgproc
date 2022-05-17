@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dapine/imgproc/image"
 	"github.com/streadway/amqp"
 )
 
@@ -17,7 +18,7 @@ func processResizeMessages(ch *amqp.Channel, msgs <-chan amqp.Delivery) {
 		width := headers["width"].(int64)
 		height := headers["height"].(int64)
 
-		img := Resize(payload, width, height)
+		img := image.Resize(payload, width, height)
 
 		ret := amqp.Publishing{
 		    CorrelationId: d.CorrelationId,
@@ -40,7 +41,7 @@ func processRotateMessages(ch *amqp.Channel, msgs <-chan amqp.Delivery) {
 
 		angle := headers["angle"].(int64)
 
-		img := Rotate(payload, angle)
+		img := image.Rotate(payload, angle)
 
 		ret := amqp.Publishing{
 		    CorrelationId: d.CorrelationId,
