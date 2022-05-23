@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/dapine/imgproc/image"
@@ -70,7 +71,13 @@ func consumeQueues(ch *amqp.Channel) {
 }
 
 func main() {
-	conn := newConnection("amqp://guest:guest@localhost:5672")
+	amqpHostname := os.Getenv("AMQP_HOSTNAME")
+
+	if amqpHostname == "" {
+		amqpHostname = "localhost"
+	}
+
+	conn := newConnection("amqp://guest:guest@"+amqpHostname+":5672")
 	defer conn.Close()
 	ch := newChannel(conn)
 	defer ch.Close()

@@ -9,16 +9,23 @@ services:
       - 15672:15672
     healthcheck:
       test: "exit 0"
-    network_mode: host
+    networks:
+      - imgproc_net
 
   imgproc:
     build: 
       context: .
     ports:
       - 9001:9001
-    # command: './imgproc'
+    environment:
+      - AMQP_HOSTNAME=rabbitmq
     depends_on:
       rabbitmq:
         condition: service_healthy
-    network_mode: host
     restart: always
+    networks:
+      - imgproc_net
+
+networks:
+  imgproc_net:
+    driver: bridge
