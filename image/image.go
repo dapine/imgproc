@@ -50,6 +50,15 @@ var imageTypeToMime = map[ImageType]string {
 	10: "image/avif",
 }
 
+var gravityMap = map[string]bimg.Gravity {
+	"centre": 0,
+	"north": 1,
+	"east": 2,
+	"south": 3,
+	"west": 4,
+	"smart": 5,
+}
+
 func herr(err error) {
     if err != nil {
         log.Println(err)
@@ -83,6 +92,15 @@ func Convert(bytes []byte, imgType string) ([]byte, string, string) {
 	return img, ex, mime
 }
 
+func Crop(bytes []byte, width, height int64, gravity string) []byte {
+	gr := newGravity(gravity)
+
+	img, err := bimg.NewImage(bytes).Crop(int(width), int(height), bimg.Gravity(gr))
+	herr(err)
+
+	return img
+}
+
 func (imgType ImageType) ToExtension() string {
 	ex := imageTypeToExtension[imgType]
 
@@ -99,4 +117,10 @@ func NewImageType(itype string) ImageType {
 	it := stringToImageType[itype]
 
 	return it
+}
+
+func newGravity(gravity string) bimg.Gravity {
+	gr := gravityMap[gravity]
+
+	return gr
 }

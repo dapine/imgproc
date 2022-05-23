@@ -24,7 +24,7 @@ func getImg(t *testing.T) []byte {
 }
 
 func write(bytes []byte, filename string, t *testing.T) {
-	err := os.WriteFile("/tmp/" + filename, bytes, 0644)
+	err := os.WriteFile("/tmp/imgproc-" + filename, bytes, 0644)
 	if err != nil {
 		t.Error(err)
 	}
@@ -84,4 +84,46 @@ func TestConvertToGif(t *testing.T) {
 		t.Errorf("expected: %s, got: %s", "image/gif", mime)
 	}
 	write(gif, "convert-gif.gif", t)
+}
+
+func TestCropCentre(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Crop(img, 150, 150, "centre")
+	write(newImg, "crop-centre", t)
+}
+
+func TestCropNorth(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Crop(img, 150, 150, "north")
+	write(newImg, "crop-north", t)
+}
+
+func TestCropEast(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Crop(img, 150, 150, "east")
+	write(newImg, "crop-east", t)
+}
+
+func TestCropSouth(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Crop(img, 150, 150, "south")
+	write(newImg, "crop-south", t)
+}
+
+func TestCropWest(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Crop(img, 150, 150, "west")
+	write(newImg, "crop-west", t)
+}
+
+func TestCropSmart(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Crop(img, 150, 150, "smart")
+	write(newImg, "crop-smart", t)
 }
