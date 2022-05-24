@@ -9,40 +9,59 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func processResizeMessages(ch *amqp.Channel, msgs <-chan amqp.Delivery) {
-	for d := range msgs {
-		headers := d.Headers
-		payload := d.Body
+type AmqpImageTransformation func([]byte, amqp.Table) []byte
 
-		contentType := headers["content_type"].(string)
-
-		width := headers["width"].(int64)
-		height := headers["height"].(int64)
-
-		img := image.Resize(payload, width, height)
-
-		ret := amqp.Publishing{
-		    CorrelationId: d.CorrelationId,
-		    Timestamp: time.Now(),
-		    ContentType: contentType,
-		    Body: img,
-		}
-
-		err := ch.Publish("", d.ReplyTo, false, false, ret)
-		logErr(err)
-	}
+func AmqpResize(bytes []byte, headers amqp.Table) []byte {
+	width := headers["width"].(int64)
+	height := headers["height"].(int64)
+	return image.Resize(bytes, width, height)
 }
 
-func processRotateMessages(ch *amqp.Channel, msgs <-chan amqp.Delivery) {
+func AmqpRotate(bytes []byte, headers amqp.Table) []byte {
+	angle := headers["angle"].(int64)
+	return image.Rotate(bytes, angle)
+}
+
+func AmqpConvert(bytes []byte, headers amqp.Table) []byte {
+	it := headers["target_image_type"].(string)
+	img, _, _ := image.Convert(bytes, it)
+	return img
+}
+
+func AmqpCrop(bytes []byte, headers amqp.Table) []byte {
+	width := headers["width"].(int64)
+	height := headers["height"].(int64)
+	gravity := headers["gravity"].(string)
+	return image.Crop(bytes, width, height, gravity)
+}
+
+func AmqpEnlarge(bytes []byte, headers amqp.Table) []byte {
+	width := headers["width"].(int64)
+	height := headers["height"].(int64)
+	return image.Enlarge(bytes, width, height)
+}
+
+func AmqpExtract(bytes []byte, headers amqp.Table) []byte {
+	x := headers["x"].(int64)
+	y := headers["y"].(int64)
+	width := headers["width"].(int64)
+	height := headers["height"].(int64)
+	return image.Extract(bytes, x, y, width, height)
+}
+
+func AmqpFlip(bytes []byte, headers amqp.Table) []byte {
+	axis := headers["axis"].(string)
+	return image.Flip(bytes, axis)
+}
+
+func processMessages(ch *amqp.Channel, msgs <-chan amqp.Delivery, transform AmqpImageTransformation) {
 	for d := range msgs {
 		headers := d.Headers
 		payload := d.Body
 
 		contentType := headers["content_type"].(string)
 
-		angle := headers["angle"].(int64)
-
-		img := image.Rotate(payload, angle)
+		img := transform(payload, headers)
 
 		ret := amqp.Publishing{
 		    CorrelationId: d.CorrelationId,
@@ -63,11 +82,36 @@ func consumeQueues(ch *amqp.Channel) {
 	queue, exchage, key = "resize", "image_processing", "resize"
 	qResize := newQueue(ch, queue, exchage, key)
 
+	queue, exchage, key = "convert", "image_processing", "convert"
+	qConvert := newQueue(ch, queue, exchage, key)
+
+	queue, exchage, key = "crop", "image_processing", "crop"
+	qCrop := newQueue(ch, queue, exchage, key)
+
+	queue, exchage, key = "enlarge", "image_processing", "enlarge"
+	qEnlarge := newQueue(ch, queue, exchage, key)
+
+	queue, exchage, key = "extract", "image_processing", "extract"
+	qExtract := newQueue(ch, queue, exchage, key)
+
+	queue, exchage, key = "flip", "image_processing", "flip"
+	qFlip := newQueue(ch, queue, exchage, key)
+
 	msgsRotate := consume(ch, qRotate)
 	msgsResize := consume(ch, qResize)
+	msgsConvert := consume(ch, qConvert)
+	msgsCrop := consume(ch, qCrop)
+	msgsEnlarge := consume(ch, qEnlarge)
+	msgsExtract := consume(ch, qExtract)
+	msgsFlip := consume(ch, qFlip)
 
-	go processResizeMessages(ch, msgsResize)
-	go processRotateMessages(ch, msgsRotate)
+	go processMessages(ch, msgsRotate, AmqpRotate)
+	go processMessages(ch, msgsResize, AmqpResize)
+	go processMessages(ch, msgsConvert, AmqpConvert)
+	go processMessages(ch, msgsCrop, AmqpCrop)
+	go processMessages(ch, msgsEnlarge, AmqpEnlarge)
+	go processMessages(ch, msgsExtract, AmqpExtract)
+	go processMessages(ch, msgsFlip, AmqpFlip)
 }
 
 func main() {
