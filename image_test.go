@@ -127,3 +127,45 @@ func TestCropSmart(t *testing.T) {
 	newImg := image.Crop(img, 150, 150, "smart")
 	write(newImg, "crop-smart", t)
 }
+
+func TestEnlarge(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Enlarge(img, 3000, 0)
+	write(newImg, "enlarge", t)
+}
+
+func TestExtract(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Extract(img, 160, 600, 128, 128)
+	write(newImg, "extract", t)
+}
+
+func TestFlipVertical(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Flip(img, "vertical")
+	write(newImg, "flip-vertical", t)
+}
+
+func TestFlipY(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Flip(img, "y")
+	write(newImg, "flip-y", t)
+}
+
+func TestFlipHorizontal(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Flip(img, "horizontal")
+	write(newImg, "flip-horizontal", t)
+}
+
+func TestFlipX(t *testing.T) {
+	img := getImg(t)
+
+	newImg := image.Flip(img, "x")
+	write(newImg, "flip-x", t)
+}

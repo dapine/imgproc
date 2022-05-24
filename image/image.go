@@ -101,6 +101,34 @@ func Crop(bytes []byte, width, height int64, gravity string) []byte {
 	return img
 }
 
+func Enlarge(bytes []byte, width, height int64) []byte {
+	img, err := bimg.NewImage(bytes).Enlarge(int(width), int(height))
+	herr(err)
+
+	return img
+}
+
+func Extract(bytes []byte, x, y, width, height int64) []byte {
+	img, err := bimg.NewImage(bytes).Extract(int(y), int(x), int(width), int(height))
+	herr(err)
+
+	return img
+}
+
+func Flip(bytes []byte, axis string) []byte {
+	if axis == "y" || axis == "vertical" {
+		img, err := bimg.NewImage(bytes).Flip()
+		herr(err)
+		return img
+	} else if axis == "x" || axis == "horizontal" {
+		img, err := bimg.NewImage(bytes).Flop()
+		herr(err)
+		return img
+	}
+
+	return []byte{}
+}
+
 func (imgType ImageType) ToExtension() string {
 	ex := imageTypeToExtension[imgType]
 
