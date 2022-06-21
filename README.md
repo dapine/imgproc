@@ -1,6 +1,6 @@
 # imgproc
 
-imgproc is a image processing server on top of RabbitMQ and libvips.
+imgproc is an image processing server on top of RabbitMQ and libvips.
 
 ## How it works
 Each image processing operation (e.g.: resize, rotate) has an exclusive queue. The server expects messages with an image binary and a set of headers, as the processing parameters.
